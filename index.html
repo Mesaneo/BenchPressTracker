@@ -3,91 +3,306 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bench-Press Tracker (Voice + Target + Click)</title>
+<title>ProForm Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
 <style>
-  html,body{
-    margin:0;height:100%;background:#0a0d12;color:#e6eaf0;
-    font-family:"Segoe UI",Roboto,sans-serif;overflow:hidden;
+  :root {
+    --bg-app: #09090b;       /* Deepest black/grey */
+    --bg-panel: #141416;     /* Card background */
+    --bg-input: #1f1f22;
+    --accent: #ff6b2b;       /* The vibrant orange from the image */
+    --accent-dim: #963e17;
+    --text-main: #ffffff;
+    --text-muted: #86868b;
+    --border: #27272a;
+    --radius: 12px;
   }
-  #container{display:flex;height:100%;width:100%;}
-  #stage{position:relative;flex:1;background:#000;overflow:hidden;}
-  video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
-  #hud{
-    position:absolute;top:20px;left:20px;font-size:60px;font-weight:700;
-    background:rgba(0,0,0,0.4);padding:12px 26px;border-radius:14px;
-    backdrop-filter:blur(6px);
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; height: 100%; width: 100%;
+    background: var(--bg-app);
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
   }
-  #buttons{
-    position:absolute;bottom:25px;left:50%;transform:translateX(-50%);
-    display:flex;gap:20px;
+
+  /* --- GRID LAYOUT --- */
+  #app-container {
+    display: grid;
+    grid-template-columns: 1fr 380px; /* Video takes rest, Dashboard fixed width */
+    height: 100%;
+    width: 100%;
   }
-  .ctrlbtn{
-    background:linear-gradient(145deg,#18232f,#10151d);color:#fff;
-    border:1px solid rgba(255,255,255,0.2);border-radius:8px;
-    padding:10px 20px;font-size:16px;cursor:pointer;
-    transition:background .3s,transform .1s;
+
+  /* --- VIDEO STAGE (LEFT) --- */
+  #stage-area {
+    position: relative;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
   }
-  .ctrlbtn:hover{background:#1a2532;}
-  #controls{
-    width:300px;background:rgba(20,26,34,.9);border-left:1px solid rgba(255,255,255,.05);
-    padding:24px;display:flex;flex-direction:column;gap:20px;backdrop-filter:blur(8px);
+  
+  video, canvas {
+    position: absolute;
+    width: 100%; height: 100%;
+    object-fit: cover; /* Fills the space nicely */
   }
-  h3{margin:0 0 6px;font-size:20px;color:#9bd2ff;}
-  label{display:block;font-size:13px;margin-bottom:4px;color:#c5ccdb;}
-  input[type=number]{
-    width:100%;padding:6px 8px;background:#121a24;border:1px solid rgba(255,255,255,.15);
-    color:#e6eaf0;border-radius:6px;font-size:15px;
+  /* Flip video for mirror effect */
+  video { transform: scaleX(-1); }
+
+  /* --- DASHBOARD (RIGHT) --- */
+  #dashboard {
+    padding: 24px;
+    background: var(--bg-app);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
   }
-  .metric{padding:12px 14px;background:rgba(255,255,255,.05);border-radius:10px;
-    border:1px solid rgba(255,255,255,.08);}
-  .metric-label{font-size:13px;color:#b0b8c6;margin-bottom:4px;}
-  .metric-value{font-size:24px;font-weight:700;color:#7be2ff;}
-  .note{font-size:12px;color:#a0a8b5;line-height:1.4em;}
-  #startOverlay{
-    position:absolute;inset:0;display:flex;justify-content:center;align-items:center;
-    background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:20;
+
+  .header {
+    margin-bottom: 10px;
   }
-  #startBtn{
-    background:radial-gradient(circle at 30% 30%,#4ade80,#15803d);
-    width:200px;height:200px;border:none;border-radius:50%;color:#fff;
-    font-size:28px;font-weight:700;cursor:pointer;box-shadow:0 0 25px rgba(0,255,128,.4);
+  .header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  .header p { margin: 4px 0 0; font-size: 13px; color: var(--text-muted); }
+
+  /* --- CARDS --- */
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
   }
-  #startBtn:hover{transform:scale(1.05);}
+
+  /* --- HERO CARD (REPS) - Mimics the orange "Steps" block --- */
+  .card.hero {
+    background: linear-gradient(135deg, var(--accent), #ff8f50);
+    border: none;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 160px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(255, 107, 43, 0.2);
+  }
+  
+  .hero-icon {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 10px;
+  }
+  
+  .hero-label { font-size: 14px; font-weight: 500; opacity: 0.9; }
+  .hero-value { font-size: 56px; font-weight: 700; line-height: 1; margin-top: 8px; }
+  
+  /* Progress bar inside hero */
+  .hero-progress-bg {
+    margin-top: auto; height: 4px; width: 100%;
+    background: rgba(0,0,0,0.2); border-radius: 2px; overflow: hidden;
+  }
+  .hero-progress-fill {
+    height: 100%; background: #fff; width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* --- METRIC CARD --- */
+  .metric-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .metric-title { font-size: 13px; color: var(--text-muted); }
+  .metric-big { font-size: 24px; font-weight: 700; color: var(--text-main); }
+  
+  /* Visual Gauge for Straightness */
+  .gauge-container {
+    height: 10px; background: var(--bg-input); border-radius: 5px;
+    margin-top: 8px; overflow: hidden; position: relative;
+  }
+  .gauge-bar {
+    height: 100%; width: 0%;
+    background: var(--accent);
+    transition: width 0.1s linear;
+  }
+  .gauge-marker {
+    position: absolute; top:0; bottom:0; width: 2px; background: #555;
+    z-index: 2;
+  }
+
+  /* --- CONTROLS SECTION --- */
+  .control-group { margin-bottom: 16px; }
+  .control-group label {
+    display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;
+  }
+  
+  input[type=number] {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type=number]:focus { border-color: var(--accent); }
+
+  /* --- ACTION BUTTONS --- */
+  .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+  
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: #fff;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: #2a2a2d; }
+  .btn-accent {
+    background: rgba(255, 107, 43, 0.15);
+    color: var(--accent);
+    border-color: rgba(255, 107, 43, 0.3);
+  }
+  .btn-accent:hover {
+    background: rgba(255, 107, 43, 0.25);
+  }
+
+  /* --- STATUS --- */
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #444; margin-right: 6px;
+  }
+  .status-dot.active { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+  .note { font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-top: 10px; }
+
+  /* --- OVERLAY (Start Screen) --- */
+  #startOverlay {
+    position: absolute; inset: 0;
+    background: rgba(9, 9, 11, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 50;
+  }
+  #startBtn {
+    background: var(--accent);
+    color: #fff; border: none;
+    padding: 16px 40px; font-size: 18px; font-weight: 700;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(255, 107, 43, 0.4);
+    transition: transform 0.2s;
+  }
+  #startBtn:hover { transform: scale(1.05); }
+
+  /* Responsive styling */
+  @media (max-width: 900px) {
+    #app-container { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    #dashboard { height: auto; border-top: 1px solid var(--border); }
+    #stage-area { min-height: 50vh; }
+  }
 </style>
 </head>
 <body>
-<div id="container">
-  <div id="stage">
+
+<div id="app-container">
+  
+  <div id="stage-area">
     <video id="video" playsinline muted></video>
     <canvas id="overlay"></canvas>
-    <div id="hud">0</div>
-    <div id="startOverlay"><button id="startBtn">Start</button></div>
-    <div id="buttons">
-      <button id="resetBtn" class="ctrlbtn">Reset</button>
-      <button id="pauseBtn" class="ctrlbtn">Pause</button>
+    
+    <div id="startOverlay">
+      <h2 style="margin-bottom:20px; font-weight:300; letter-spacing:1px;">READY TO TRAIN?</h2>
+      <button id="startBtn">START SESSION</button>
     </div>
   </div>
 
-  <div id="controls">
-    <h3>Workout</h3>
-    <div>
-      <label for="targetReps">Target Reps per Set</label>
-      <input id="targetReps" type="number" min="1" max="100" value="15">
+  <div id="dashboard">
+    <div class="header">
+      <h1>Hey, Athlete!</h1>
+      <p>Here is your real-time form analysis.</p>
     </div>
-    <h3>Thresholds</h3>
-    <div>
-      <label for="thHigh">Complete (straight) ≥</label>
-      <input id="thHigh" type="number" min="50" max="100" value="85">
+
+    <div class="card hero">
+      <div>
+        <div class="hero-icon">💪</div>
+        <div class="hero-label">Total Reps</div>
+        <div id="hud-reps" class="hero-value">0</div>
+      </div>
+      <div>
+         <div style="font-size:12px; margin-bottom:5px; display:flex; justify-content:space-between;">
+           <span>Progress to Target</span>
+           <span id="target-display">15</span>
+         </div>
+         <div class="hero-progress-bg">
+           <div id="rep-progress" class="hero-progress-fill"></div>
+         </div>
+      </div>
     </div>
-    <div>
-      <label for="thLow">Reset (bottom) ≤</label>
-      <input id="thLow" type="number" min="0" max="80" value="50">
+
+    <div class="card">
+      <div class="metric-row">
+        <span class="metric-title">Form Quality</span>
+        <span id="currentPct" class="metric-big">0%</span>
+      </div>
+      <div style="font-size:11px; color:#555; margin-bottom:4px;">Extension Angle</div>
+      <div class="gauge-container">
+        <div class="gauge-marker" style="left: 50%" id="marker-low"></div> 
+        <div class="gauge-marker" style="left: 85%" id="marker-high"></div>
+        <div id="gauge-bar" class="gauge-bar"></div>
+      </div>
     </div>
-    <div class="metric">
-      <div class="metric-label">Current Straightness</div>
-      <div id="currentPct" class="metric-value">0%</div>
+
+    <div class="card">
+      <div class="metric-row">
+        <span class="metric-title">Configuration</span>
+      </div>
+      
+      <div class="control-group">
+        <label>Target Reps</label>
+        <input id="targetReps" type="number" min="1" max="100" value="15">
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div class="control-group">
+          <label>Top Threshold %</label>
+          <input id="thHigh" type="number" min="50" max="100" value="85">
+        </div>
+        <div class="control-group">
+          <label>Reset Threshold %</label>
+          <input id="thLow" type="number" min="0" max="80" value="50">
+        </div>
+      </div>
+      
+      <div class="btn-row">
+        <button id="resetBtn" class="btn">Reset Count</button>
+        <button id="pauseBtn" class="btn btn-accent">Pause</button>
+      </div>
     </div>
-    <p class="note">Say "Spotter..." followed by one of the following commands: “Start”, “Stop”, “Pause”, “Unpause”, or “Resume” to control tracking hands-free.</p>
+
+    <div style="margin-top:auto;">
+       <div style="display:flex; align-items:center; color:var(--text-muted); font-size:12px; margin-bottom:8px;">
+         <span id="voice-dot" class="status-dot"></span>
+         <span id="voice-status">Voice Control: Spotter Standby</span>
+       </div>
+       <p class="note">Say <strong>"Spotter..."</strong> followed by "Start", "Pause", or "Reset".</p>
+    </div>
+
   </div>
 </div>
 
@@ -95,157 +310,310 @@
 import {FilesetResolver, PoseLandmarker, DrawingUtils}
   from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.10";
 
-const video=document.getElementById("video");
-const canvas=document.getElementById("overlay");
-const ctx=canvas.getContext("2d");
-const hud=document.getElementById("hud");
-const currentPct=document.getElementById("currentPct");
-const startBtn=document.getElementById("startBtn");
-const startOverlay=document.getElementById("startOverlay");
-const pauseBtn=document.getElementById("pauseBtn");
-const resetBtn=document.getElementById("resetBtn");
-const thHighEl=document.getElementById("thHigh");
-const thLowEl=document.getElementById("thLow");
-const targetRepsEl=document.getElementById("targetReps");
+// --- DOM ELEMENTS ---
+const video = document.getElementById("video");
+const canvas = document.getElementById("overlay");
+const ctx = canvas.getContext("2d");
 
+// Dashboard Elements
+const elReps = document.getElementById("hud-reps");
+const elRepProgress = document.getElementById("rep-progress");
+const elTargetDisplay = document.getElementById("target-display");
+const elCurrentPct = document.getElementById("currentPct");
+const elGaugeBar = document.getElementById("gauge-bar");
+const elMarkerLow = document.getElementById("marker-low");
+const elMarkerHigh = document.getElementById("marker-high");
+const elVoiceDot = document.getElementById("voice-dot");
+const elVoiceStatus = document.getElementById("voice-status");
+
+// Controls
+const startOverlay = document.getElementById("startOverlay");
+const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const resetBtn = document.getElementById("resetBtn");
+const thHighEl = document.getElementById("thHigh");
+const thLowEl = document.getElementById("thLow");
+const targetRepsEl = document.getElementById("targetReps");
+
+// --- STATE ---
 let landmarker;
-let reps=0,passedBottom=false,smoothed=0,paused=true;
-let thHigh=90,thLow=50,minAngle=50,maxAngle=175,targetReps=15;
+let reps = 0;
+let passedBottom = false;
+let smoothed = 0;
+let paused = true;
+let thHigh = 85;
+let thLow = 50;
+let minAngle = 50; 
+let maxAngle = 170; // Adjusted for human anatomy logic
+let targetReps = 15;
 
 // --- SOUNDS ---
 function playClick(){
-  const ctxA=new (window.AudioContext||window.webkitAudioContext)();
-  const o=ctxA.createOscillator(),g=ctxA.createGain();
+  const ctxA = new (window.AudioContext||window.webkitAudioContext)();
+  const o = ctxA.createOscillator();
+  const g = ctxA.createGain();
   o.connect(g).connect(ctxA.destination);
-  o.frequency.value=2000;g.gain.value=0.15;
-  o.start();o.stop(ctxA.currentTime+0.05);
-}
-function speak(text){
-  const u=new SpeechSynthesisUtterance(text);
-  u.rate=1.1;
-  speechSynthesis.speak(u);
-}
-function playTada(){
-  const tada=new Audio("https://www.winhistory.de/more/winstart/mp3/win31.mp3");
-  tada.volume=0.5;tada.play();
+  o.frequency.value = 800; // Lower, more pleasant beep
+  g.gain.value = 0.1;
+  o.type = 'sine';
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.00001, ctxA.currentTime + 0.1);
+  o.stop(ctxA.currentTime + 0.1);
 }
 
-// --- MATH ---
+function speak(text){
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.1;
+  speechSynthesis.speak(u);
+}
+
+function playTada(){
+  // Simple success sequence
+  const ctxA = new (window.AudioContext||window.webkitAudioContext)();
+  const t = ctxA.currentTime;
+  [440, 554, 659].forEach((f,i) => {
+      const o = ctxA.createOscillator();
+      const g = ctxA.createGain();
+      o.connect(g).connect(ctxA.destination);
+      o.frequency.value = f;
+      o.start(t + i*0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + i*0.1 + 0.3);
+      o.stop(t + i*0.1 + 0.3);
+  });
+}
+
+// --- LOGIC ---
 function angle(a,b,c){
   const v1={x:a.x-b.x,y:a.y-b.y},v2={x:c.x-b.x,y:c.y-b.y};
   const dot=v1.x*v2.x+v1.y*v2.y;
   const m1=Math.hypot(v1.x,v1.y),m2=Math.hypot(v2.x,v2.y);
   return Math.acos(dot/(m1*m2))*180/Math.PI;
 }
-function mapAngleToPct(a){return Math.max(0,Math.min(1,(a-minAngle)/(maxAngle-minAngle)))*100;}
 
-// --- REPS ---
+function mapAngleToPct(a){
+  // Map angle between min and max to 0-100%
+  return Math.max(0,Math.min(1,(a-minAngle)/(maxAngle-minAngle)))*100;
+}
+
+function updateDashboard(pct) {
+    elCurrentPct.textContent = Math.round(pct) + "%";
+    elGaugeBar.style.width = pct + "%";
+    
+    // Change color based on thresholds
+    if(pct >= thHigh) elGaugeBar.style.backgroundColor = "#4ade80"; // Green for good lock
+    else if(pct <= thLow) elGaugeBar.style.backgroundColor = "#ff6b2b"; // Orange for bottom
+    else elGaugeBar.style.backgroundColor = "#ffffff"; // White for transit
+}
+
 function repLogic(p){
-  if(paused)return;
-  if(p<=thLow)passedBottom=true;
-  if(passedBottom&&p>=thHigh){
-    reps++;hud.textContent=reps;passedBottom=false;
+  if(paused) return;
+  
+  // Logic: Must go down (low pct) then up (high pct)
+  if(p <= thLow) passedBottom = true;
+  
+  if(passedBottom && p >= thHigh){
+    reps++;
+    passedBottom = false;
+    
+    // UI Update
+    elReps.textContent = reps;
+    const progressPct = Math.min(100, (reps / targetReps) * 100);
+    elRepProgress.style.width = progressPct + "%";
+    
+    // Feedback
     playClick();
     speak(reps.toString());
-    if(reps>=targetReps){playTada();}
+    
+    if(reps === targetReps){
+        playTada();
+        speak("Set complete!");
+    }
   }
 }
 
-// --- CAMERA ---
+// --- MEDIAPIPE SETUP ---
 async function setupCamera(){
-  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});
-  video.srcObject=s;await video.play();
-  resizeCanvas();window.addEventListener("resize",resizeCanvas);
+  const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}, audio:false});
+  video.srcObject = s;
+  await video.play();
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
 }
-function resizeCanvas(){canvas.width=video.videoWidth;canvas.height=video.videoHeight;}
 
-// --- LANDMARKER ---
+function resizeCanvas(){
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+}
+
 async function setupLandmarker(){
-  const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.10/wasm");
-  landmarker=await PoseLandmarker.createFromOptions(fs,{
+  const fs = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.10/wasm");
+  landmarker = await PoseLandmarker.createFromOptions(fs,{
     baseOptions:{
       modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task"
     },
-    runningMode:"VIDEO",numPoses:1
+    runningMode:"VIDEO", numPoses:1
   });
-  console.log("Pose model loaded.");
+  console.log("Pose loaded");
 }
 
-// --- DRAW ---
 function drawPose(lms){
-  const draw=new DrawingUtils(ctx);
-  draw.drawLandmarks(lms,{radius:2,color:"#00ffcc"});
-  draw.drawConnectors(lms,PoseLandmarker.POSE_CONNECTIONS,{color:"#00aaff",lineWidth:2});
-  const s=lms[12],e=lms[14],w=lms[16];
-  const W=canvas.width,H=canvas.height;
-  ctx.strokeStyle="yellow";ctx.lineWidth=4;
-  ctx.beginPath();ctx.moveTo(s.x*W,s.y*H);ctx.lineTo(e.x*W,e.y*H);ctx.lineTo(w.x*W,w.y*H);ctx.stroke();
+  // Modern styling for skeleton
+  const draw = new DrawingUtils(ctx);
+  
+  // Draw all faint connections first
+  draw.drawConnectors(lms, PoseLandmarker.POSE_CONNECTIONS, {color:"rgba(255,255,255,0.1)", lineWidth:1});
+  draw.drawLandmarks(lms, {radius:1, color:"rgba(255,255,255,0.2)"});
+
+  // Highlight the working arm (Right arm usually 12-14-16, let's track both or primary)
+  // Mediapipe: 11-13-15 (Left Arm), 12-14-16 (Right Arm)
+  // Let's visualize the arm we are tracking (Right side for now as per original code logic)
+  
+  const s = lms[12], e = lms[14], w = lms[16];
+  
+  // Custom draw for the active limb
+  ctx.save();
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  
+  // Draw arm segments
+  ctx.strokeStyle = "#ff6b2b"; // The accent Orange
+  ctx.beginPath();
+  ctx.moveTo(s.x * canvas.width, s.y * canvas.height);
+  ctx.lineTo(e.x * canvas.width, e.y * canvas.height);
+  ctx.lineTo(w.x * canvas.width, w.y * canvas.height);
+  ctx.stroke();
+  
+  // Draw Joints
+  ctx.fillStyle = "#fff";
+  [s,e,w].forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x * canvas.width, p.y * canvas.height, 5, 0, 2*Math.PI);
+      ctx.fill();
+  });
+  
+  ctx.restore();
 }
 
-// --- LOOP ---
+// --- MAIN LOOP ---
 async function loop(ts){
   requestAnimationFrame(loop);
-  if(!landmarker)return;
-  const res=landmarker.detectForVideo(video,ts);
+  if(!landmarker) return;
+  
+  const res = landmarker.detectForVideo(video, ts);
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();ctx.scale(-1,1);
-  ctx.drawImage(video,-canvas.width,0,canvas.width,canvas.height);
+  
+  // Mirror logic for canvas drawing
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.translate(-canvas.width, 0);
+  
+  if(res.landmarks.length > 0){
+    const lms = res.landmarks[0];
+    drawPose(lms);
+    
+    // Calculate metric (Right Arm)
+    const shoulder = lms[12], elbow = lms[14], wrist = lms[16];
+    const ang = angle(shoulder, elbow, wrist);
+    const pct = mapAngleToPct(ang);
+    
+    smoothed = smoothed * 0.8 + pct * 0.2;
+    updateDashboard(smoothed);
+    repLogic(smoothed);
+  }
+  
   ctx.restore();
-  if(!res.landmarks.length)return;
-  const lms=res.landmarks[0];
-  drawPose(lms);
-  const shoulder=lms[12],elbow=lms[14],wrist=lms[16];
-  const ang=angle(shoulder,elbow,wrist);
-  const pct=mapAngleToPct(ang);
-  smoothed=smoothed*0.8+pct*0.2;
-  currentPct.textContent=Math.round(smoothed)+"%";
-  repLogic(smoothed);
 }
 
-// --- CONTROLS ---
-function resetReps(){reps=0;hud.textContent="0";passedBottom=false;}
+// --- UI HANDLERS ---
 function togglePause(state){
-  paused=state!==undefined?state:!paused;
-  if(paused){startOverlay.style.display="flex";}else{startOverlay.style.display="none";}
+  paused = state !== undefined ? state : !paused;
+  if(paused){
+      startOverlay.style.display = "flex";
+      pauseBtn.textContent = "Resume";
+      pauseBtn.classList.remove("btn-accent");
+  } else {
+      startOverlay.style.display = "none";
+      pauseBtn.textContent = "Pause";
+      pauseBtn.classList.add("btn-accent");
+      
+      // Init sound context on first user gesture
+      if(window.AudioContext) new window.AudioContext().resume();
+  }
 }
-startBtn.onclick=()=>togglePause(false);
-pauseBtn.onclick=()=>togglePause(true);
-resetBtn.onclick=()=>resetReps();
-thHighEl.oninput=()=>thHigh=parseFloat(thHighEl.value)||90;
-thLowEl.oninput=()=>thLow=parseFloat(thLowEl.value)||50;
-targetRepsEl.oninput=()=>targetReps=parseInt(targetRepsEl.value)||15;
+
+function resetApp(){
+    reps = 0;
+    elReps.textContent = "0";
+    elRepProgress.style.width = "0%";
+    passedBottom = false;
+}
+
+startBtn.onclick = () => togglePause(false);
+pauseBtn.onclick = () => togglePause();
+resetBtn.onclick = () => resetApp();
+
+// Input updates
+thHighEl.oninput = () => { 
+    thHigh = parseFloat(thHighEl.value)||85; 
+    elMarkerHigh.style.left = thHigh + "%"; 
+};
+thLowEl.oninput = () => { 
+    thLow = parseFloat(thLowEl.value)||50; 
+    elMarkerLow.style.left = thLow + "%";
+};
+targetRepsEl.oninput = () => { 
+    targetReps = parseInt(targetRepsEl.value)||15; 
+    elTargetDisplay.textContent = targetReps;
+};
+
+// Initialize markers visually
+elMarkerHigh.style.left = thHigh + "%"; 
+elMarkerLow.style.left = thLow + "%";
 
 // --- VOICE COMMANDS ---
 function initVoiceCommands(){
-  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
-    console.warn("SpeechRecognition not supported.");return;
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    elVoiceStatus.textContent = "Voice Control Unavailable";
+    return;
   }
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  const recog=new SR();
-  recog.continuous=true;
-  recog.lang="en-US";
-  recog.interimResults=false;
-  recog.maxAlternatives=1;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recog = new SR();
+  recog.continuous = true;
+  recog.lang = "en-US";
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
 
-  recog.onresult=(e)=>{
-    const cmd=e.results[e.results.length-1][0].transcript.trim().toLowerCase();
-    console.log("Heard:",cmd);
-    if(cmd.includes("spotter start")||cmd.includes("spotter resume")||cmd.includes("spotter unpause"))togglePause(false);
-    if(cmd.includes("spotter pause")||cmd.includes("spotter stop"))togglePause(true);
+  recog.onstart = () => {
+      elVoiceDot.classList.add("active");
+      elVoiceStatus.textContent = "Spotter Listening...";
   };
-  recog.onerror=(err)=>{console.warn("SpeechRec error:",err);setTimeout(()=>recog.start(),2000);};
-  recog.onend=()=>setTimeout(()=>recog.start(),1500);
+
+  recog.onresult = (e) => {
+    const cmd = e.results[e.results.length-1][0].transcript.trim().toLowerCase();
+    console.log("Voice Command:", cmd);
+    
+    if(cmd.includes("spotter")) {
+        if(cmd.includes("start") || cmd.includes("resume")) togglePause(false);
+        if(cmd.includes("pause") || cmd.includes("stop")) togglePause(true);
+        if(cmd.includes("reset")) resetApp();
+    }
+  };
+
+  recog.onerror = () => { setTimeout(()=>recog.start(), 2000); };
+  recog.onend = () => { setTimeout(()=>recog.start(), 1500); };
+  
   recog.start();
-  console.log("Voice control active.");
 }
 
-// --- INIT ---
+// --- BOOT ---
 (async()=>{
   await setupCamera();
   await setupLandmarker();
   initVoiceCommands();
   requestAnimationFrame(loop);
 })();
+
 </script>
 </body>
 </html>
