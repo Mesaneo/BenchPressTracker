@@ -87,7 +87,7 @@
       <div class="metric-label">Current Straightness</div>
       <div id="currentPct" class="metric-value">0%</div>
     </div>
-    <p class="note">Say “Start”, “Stop”, “Pause”, “Unpause”, or “Resume” to control tracking hands-free.</p>
+    <p class="note">Say "Spotter..." followed by one of the following commands: “Start”, “Stop”, “Pause”, “Unpause”, or “Resume” to control tracking hands-free.</p>
   </div>
 </div>
 
@@ -230,8 +230,8 @@ function initVoiceCommands(){
   recog.onresult=(e)=>{
     const cmd=e.results[e.results.length-1][0].transcript.trim().toLowerCase();
     console.log("Heard:",cmd);
-    if(cmd.includes("start")||cmd.includes("resume")||cmd.includes("unpause"))togglePause(false);
-    if(cmd.includes("pause")||cmd.includes("stop"))togglePause(true);
+    if(cmd.includes("spotter start")||cmd.includes("spotter resume")||cmd.includes("spotter unpause"))togglePause(false);
+    if(cmd.includes("spotter pause")||cmd.includes("spotter stop"))togglePause(true);
   };
   recog.onerror=(err)=>{console.warn("SpeechRec error:",err);setTimeout(()=>recog.start(),2000);};
   recog.onend=()=>setTimeout(()=>recog.start(),1500);
